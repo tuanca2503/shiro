@@ -1,3 +1,5 @@
+# python
+venv/
 # === Build output (CMake) ===
 build/
 build-*/
