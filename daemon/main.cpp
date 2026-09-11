@@ -1,9 +1,7 @@
 // daemon/main.cpp
 // File nay KHONG include llama.h, khong biet class LlamaEngine ton tai.
 // Chi biet duy nhat "engine.h" va ham factory createLlamaEngine().
-
 #include <iostream>
-#include <memory>
 #include "engine.h"
 
 int main(int argc, char **argv)
@@ -33,6 +31,7 @@ int main(int argc, char **argv)
     std::cout << "Load model thanh cong. Go cau hoi (go 'exit' de thoat):\n";
 
     std::string line;
+    engine->setSystemPrompt("U are a an experienced assistant");
     while (true)
     {
         std::cout << "\nBan: ";
@@ -42,8 +41,30 @@ int main(int argc, char **argv)
             break;
         if (line.empty())
             continue;
-        rsl = engine->generate(line, /*max_tokens=*/200);
-        std::cout << (rsl.success ? "Model: " : "ERROR SYSTEM: ") << rsl.text << "\n";
+        rsl = engine->applyChatTemplate({
+            ChatMessage(Role::User, line),
+        });
+        if (!rsl.success)
+        {
+            std::cout << "FAILED TO APPLY TEMPLATE: " << rsl.text << "\n";
+            return 1;
+        }
+        std::cout << "Model: ";
+
+        EngineResult res = engine->generateStream(rsl.text, /*max_tokens=*/200,
+                                                  [](const std::string &piece)
+                                                  {
+                                                      std::cout << piece;
+                                                      std::cout.flush(); // đẩy ra ngay lập tức, không đợi buffer đầy
+                                                      return true;
+                                                  });
+
+        std::cout << "\n"; // xuống dòng sau khi model in xong (dù thành công hay lỗi)
+
+        if (!res.success)
+        {
+            std::cerr << "[Loi] " << res.text << "\n";
+        }
     }
 
     return 0;
