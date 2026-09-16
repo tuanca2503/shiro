@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-enum class Role
+enum class ChatRole
 {
     System,
     User,
@@ -9,17 +9,17 @@ enum class Role
     Tool
 };
 
-inline const char *roleToString(Role role)
+inline const char *roleToString(ChatRole role)
 {
     switch (role)
     {
-    case Role::System:
+    case ChatRole::System:
         return "system";
-    case Role::User:
+    case ChatRole::User:
         return "user";
-    case Role::Assistant:
+    case ChatRole::Assistant:
         return "assistant";
-    case Role::Tool:
+    case ChatRole::Tool:
         return "tool";
     }
     return "user"; // fallback,
@@ -27,7 +27,8 @@ inline const char *roleToString(Role role)
 
 struct ChatMessage
 {
-    Role role;
+    ChatRole role;
     std::string content;
-    ChatMessage(Role r, std::string c) : role(r), content(std::move(c)) {}
+    ChatMessage(ChatRole r, std::string c) : role(r), content(std::move(c)) {}
 };
+

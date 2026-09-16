@@ -4,7 +4,7 @@
 #include <vector>
 #include <memory>
 #include <functional>
-#include "chat_types.h"
+#include "chat-types.h"
 
 using StreamCallback = std::function<bool(const std::string &token_text)>;
 struct EngineResult
@@ -32,31 +32,43 @@ struct EngineResult
 class Engine
 {
 public:
-    // Destructor
+    /// Destructor
     virtual ~Engine() = default;
     virtual void clearContext() = 0;
     virtual int getContextSize() = 0;
     virtual int getContextUsage() = 0;
     virtual int countTokens(const std::string &text) = 0;
 
-    // Load model from a .gguf file. n_gpu_layers: layers to offload to GPU (0 = CPU only).
-    // n_ctx: max context window size in tokens.
+    /// Load model from a .gguf file. n_gpu_layers: layers to offload to GPU (0 = CPU only).
+    /// n_ctx: max context window size in tokens.
     virtual EngineResult loadModel(const std::string &path, int n_gpu_layers, int n_ctx) = 0;
-    // Remove the oldest n_tokens_to_remove tokens from the KV-cache and shift
-    // remaining positions back. Never removes into the system prompt region.
+    /// Remove the oldest n_tokens_to_remove tokens from the KV-cache and shift
+    /// remaining positions back. Never removes into the system prompt region.
     virtual EngineResult trimContext(int n_tokens_to_remove) = 0;
-    // Format a message list (system/user/assistant/tool) using the model's
-    // chat template. Returns the formatted prompt as text.
-    virtual EngineResult applyChatTemplate(const std::vector<ChatMessage> &messages) = 0;
-    // Decode a system prompt into the cache and mark its end position as
-    // protected (trimContext() will never remove past this point).
-    virtual EngineResult setSystemPrompt(const std::string &system_prompt) = 0;
-    // Generate a reply for the given prompt, up to max_tokens new tokens.
-    // Waits for the full result before returning.
-    virtual EngineResult generate(const std::string &prompt, int max_tokens) = 0;
-    // Same as generate(), but calls on_token for every token as it's produced.
-    virtual EngineResult generateStream(const std::string &full_prompt, int max_tokens, const StreamCallback &on_token) = 0;
+    /// Format a message list (system/user/assistant/tool) using the model's
+    /// chat template. Returns the formatted prompt as text.
+    virtual EngineResult applyChatTemplate(const std::vector<ChatMessage> &messages, bool add_generation_prompt = true, bool enable_thinking = true) = 0;
+    /// Decode a system prompt into the cache and mark its end position as
+    /// protected (trimContext() will never remove past this point).
+    virtual EngineResult applySystemTemplate(
+        const std::string &system_prompt = "",
+        const std::vector<std::string> &tools = {},
+        bool enable_thinking = true) = 0;
+    /// Tokenizes and decodes raw text into the KV cache without sampling.
+    /// Used to feed context (e.g. system prompt) the model should know but not respond to.
+    virtual EngineResult feedTokens(const std::string &text) = 0;
+    /// Generate a reply for the given prompt, up to max_tokens new tokens.
+    /// Waits for the full result before returning.
+    virtual EngineResult generate(int max_tokens) = 0;
+    /// Same as generate(), but calls on_token for every token as it's produced.
+    virtual EngineResult generateStream(int max_tokens, const StreamCallback &on_token) = 0;
+    // GRAMMAR
+    virtual EngineResult setTurnGrammar(std::string gbnf = "", std::vector<std::string> triggers = {}, bool eager = false) = 0;
+    virtual EngineResult setToolCallGrammar(const std::string &arguments_schema, const std::string &trigger) = 0;
+    virtual EngineResult setAllowedRoutes(const std::vector<std::string> &routes) = 0;
+    virtual EngineResult setBooleanOutput() = 0;
+    virtual EngineResult setJsonSchema(const std::string &schema_json) = 0;
 };
 
-// Factory function
+/// Factory function
 std::unique_ptr<Engine> createLlamaEngine();

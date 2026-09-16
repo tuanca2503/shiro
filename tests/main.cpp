@@ -1,15 +1,14 @@
 #include <iostream>
 #include "engine.h"
+#include "chat_template.h"
 
- 
-int main() {
-std::unique_ptr<Engine> e = createLlamaEngine();
-    e->loadModel("model.gguf", 99, 4096);
-    std::string res = e->generate("Xin chào", 200);
-    // KHÔNG cần gọi delete — unique_ptr tự động giải phóng khi ra khỏi scope
+
+int main()
+{
+    
 }
 
-/* 
+/*
 cmake -B build -DCMAKE_BUILD_TYPE=Release \
     -DLLAMA_BUILD_TESTS=OFF \
     -DLLAMA_BUILD_EXAMPLES=OFF \

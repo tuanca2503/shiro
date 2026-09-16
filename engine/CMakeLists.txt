@@ -3,8 +3,9 @@
 # Duong dan toi llama.cpp/include la PRIVATE -> khong lo ra ngoai engine.
 
 add_library(engine STATIC
+    include/chat-types.h
+    include/engine.h
     src/llama-engine.cpp
-    include/chat_types.h
 )
 
 target_include_directories(engine
@@ -15,4 +16,6 @@ target_include_directories(engine
 target_link_libraries(engine
     PRIVATE
         llama
+        llama-common 
+        nlohmann_json::nlohmann_json
 )

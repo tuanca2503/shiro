@@ -1,6 +1,8 @@
 # python
 venv/
 *.tmp.*
+.tmp/
+
 
 # === Build output (CMake) ===
 build/
