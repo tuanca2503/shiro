@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "chat-types.h"
+
 #include "chat-types.h"
 
 enum class ChatTemplateType

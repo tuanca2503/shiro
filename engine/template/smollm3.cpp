@@ -1,6 +1,4 @@
 #include <ctime>
-#include <iostream>
-
 #include "chat-template.h"
 
 namespace
@@ -62,8 +60,6 @@ namespace
                             "{\"name\": <function-name>, \"arguments\": <args-json-object>}\n</tool_call>\n\n");
             }
             result.append("<|im_end|>\n");
-            std::cout << "result:\n"
-                      << result << std::endl;
             return result;
         }
 
@@ -99,8 +95,6 @@ namespace
                 if (!enable_thinking)
                     result.append("<think>\n\n</think>\n");
             }
-            std::cout << "result:\n"
-                      << result << std::endl;
             return result;
         }
 

@@ -3,9 +3,15 @@
 # Duong dan toi llama.cpp/include la PRIVATE -> khong lo ra ngoai engine.
 
 add_library(engine STATIC
+    include/chat-template.h
     include/chat-types.h
     include/engine.h
+    include/gbnf-builder.h
+
+    src/gbnf-builder.cpp
     src/llama-engine.cpp
+
+    template/smollm3.cpp
 )
 
 target_include_directories(engine
