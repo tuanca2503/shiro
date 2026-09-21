@@ -1,7 +1,7 @@
 # python
 venv/
 *.tmp.*
-.tmp/
+dev-tasks/
 
 
 # === Build output (CMake) ===
@@ -36,7 +36,7 @@ compile_commands.json
 *.gguf
 *.safetensors
 *.bin
-models/
+models/*
 
 # === IDE / Editor ===
 .vscode/
@@ -59,6 +59,6 @@ Thumbs.db
 *.pid
 
 # === Ghi chú riêng cho submodule llama.cpp ===
-# KHÔNG ignore thư mục submodule (third_party/llama.cpp) — git submodule tự quản lý,
+# KHÔNG ignore thư mục submodule (vendor/llama.cpp) — git submodule tự quản lý,
 # nhưng phải ignore build output của chính llama.cpp nếu build lồng trong đó
 vendor/llama.cpp/build/

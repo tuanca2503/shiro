@@ -4,6 +4,8 @@
 #include <iostream>
 #include "engine.h"
 
+using namespace shiro;
+
 int main(int argc, char **argv)
 {
     if (argc < 2)
@@ -93,7 +95,7 @@ int main(int argc, char **argv)
                                                       std::cout.flush(); // đẩy ra ngay lập tức, không đợi buffer đầy
                                                       return true;
                                                   });
-
+        engine->setTurnGrammar();
         std::cout << "\n"; // xuống dòng sau khi model in xong (dù thành công hay lỗi)
                            // check xem model có gọi tool không
         if (res.text.find("<tool_call>") != std::string::npos)

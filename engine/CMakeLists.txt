@@ -3,20 +3,32 @@
 # Duong dan toi llama.cpp/include la PRIVATE -> khong lo ra ngoai engine.
 
 add_library(engine STATIC
-    include/chat-template.h
-    include/chat-types.h
+    include/context/context-manager.h
+    include/context/context.h
+
+    include/types/chat-types.h
     include/engine.h
-    include/gbnf-builder.h
-
-    src/gbnf-builder.cpp
+    include/result.h
+    
+    src/context/policy-type.h
+    src/context/sampler-policy.h
+    src/context/sequence-policy.h
+    src/context/context-manager.cpp
+    src/context/context.cpp
+    
+    src/template/chat-template.h
+    src/template/gbnf-builder.cpp
+    src/template/gbnf-builder.h
+    src/template/smollm3-template.cpp
+    
     src/llama-engine.cpp
-
-    template/smollm3.cpp
+    src/context/sampler-policy.cpp
+    src/context/sequence-policy.cpp
 )
 
 target_include_directories(engine
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 target_link_libraries(engine
