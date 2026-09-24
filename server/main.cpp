@@ -3,11 +3,22 @@
 // Chi biet duy nhat "engine.h" va ham factory createLlamaEngine().
 #include <iostream>
 #include "engine.h"
+#include "chat-template.h"
 
 using namespace shiro;
 
 int main(int argc, char **argv)
 {
+    // DEBUG
+    //  auto a = makeChatTemplate(ChatTemplateType::Unknown);
+
+    // std::string b = a->buildSystemPrompt("");
+    // a->render({ChatMessage::from_system(b)});
+
+    // std::cout << "template: " << a->render({ChatMessage::from_system(b)}) << "\n";
+    // return 0;
+
+    // DEBUG
     if (argc < 2)
     {
         std::cerr << "Cach dung: " << argv[0] << " <duong-dan-model.gguf>\n";
@@ -23,7 +34,10 @@ int main(int argc, char **argv)
 
     // n_gpu_layers = 0 -> chay thuan CPU (an toan mac dinh cho test)
     // n_ctx = 2048 -> du de test nhanh
-    EngineResult rsl = engine->loadModel(model_path, /*n_gpu_layers=*/0, /*n_ctx=*/2048);
+    Result rsl = engine->loadModel(model_path, /*n_gpu_layers=*/0);
+    auto ctx = engine->createContextEphemeral();
+    auto tmpl = makeChatTemplate(ChatTemplateType::SmolLM3);
+
     if (!rsl.success)
     {
         std::cerr << rsl.text;
@@ -33,41 +47,51 @@ int main(int argc, char **argv)
     std::cout << "Load model thanh cong. Go cau hoi (go 'exit' de thoat):\n";
 
     std::string line;
-    engine->applySystemTemplate(
-        "You are a helpful AI assistant. "
-        "You must call an appropriate tool whenever the user's request needs information "
-        "or an action you cannot provide from your own knowledge (real-time data, external "
-        "lookups, file or device actions, etc). Do not guess, fabricate, or apologize instead "
-        "of calling a tool. "
-        "The only exception is when the user explicitly asks you to summarize information "
-        "that is already present in this conversation — in that case, answer directly "
-        "without calling any tool. "
-        "Before calling a specific function, you must first call get_tool_detail with the "
-        "name of the tool you intend to use, to learn its exact functions and parameters. "
-        "When calling a tool, output only the tool call.",
-        {// Fake: danh sach tool THAT (mo ta ngan, KHONG phai list_tools nua)
-         R"({"name": "time", "description": "Get the current date and time."})",
-         R"({"name": "weather", "description": "Get current weather information for a city."})",
-         R"({"name": "filesystem", "description": "Read, write, or list files on the local disk."})",
-         R"({"name": "web_search", "description": "Search the web for up-to-date information."})",
+    std::string prompt = tmpl->buildSystemPrompt("", {}, true);
+    std::string full_prompt = tmpl->render({ChatMessage::from_system(prompt)});
+    std::cout << "system: " << full_prompt << "\n";
 
-         // Meta-tool duy nhat con lai: lay chi tiet ham cua 1 tool cu the
-         R"({"name": "get_tool_detail", "description": "Get the detailed function signatures and parameters available inside a specific tool.", "parameters": {"type": "object", "properties": {"name": {"type": "string", "description": "The name of the tool to inspect."}}, "required": ["name"]}})"},
-        true);
-    engine->setToolCallGrammar(
-        R"({
-        "type": "object",
-        "properties": {
-            "name": { "enum": ["get_tool_detail"] },
-            "arguments": {
-                "type": "object",
-                "properties": { "name": { "type": "string" } },
-                "required": ["name"]
-            }
-        },
-        "required": ["name", "arguments"]
-    })",
-        "<tool_call>");
+    // std::string full_prompt = tmpl->renderSystem(
+    //     "You are a helpful AI assistant. "
+    //     "You must call an appropriate tool whenever the user's request needs information "
+    //     "or an action you cannot provide from your own knowledge (real-time data, external "
+    //     "lookups, file or device actions, etc). Do not guess, fabricate, or apologize instead "
+    //     "of calling a tool. "
+    //     "The only exception is when the user explicitly asks you to summarize information "
+    //     "that is already present in this conversation — in that case, answer directly "
+    //     "without calling any tool. "
+    //     "Before calling a specific function, you must first call get_tool_detail with the "
+    //     "name of the tool you intend to use, to learn its exact functions and parameters. "
+    //     "When calling a tool, output only the tool call.",
+    //     {// Fake: danh sach tool THAT (mo ta ngan, KHONG phai list_tools nua)
+    //      R"({"name": "time", "description": "Get the current date and time."})",
+    //      R"({"name": "weather", "description": "Get current weather information for a city."})",
+    //      R"({"name": "filesystem", "description": "Read, write, or list files on the local disk."})",
+    //      R"({"name": "web_search", "description": "Search the web for up-to-date information."})",
+
+    //      // Meta-tool duy nhat con lai: lay chi tiet ham cua 1 tool cu the
+    //      R"({"name": "get_tool_detail", "description": "Get the detailed function signatures and parameters available inside a specific tool.", "parameters": {"type": "object", "properties": {"name": {"type": "string", "description": "The name of the tool to inspect."}}, "required": ["name"]}})"
+
+    //     },
+    //     true);
+
+    //////////////////////////////////////////////////
+    ctx->acquire(full_prompt);
+    ctx->setTurnGrammar();
+    //     ctx->setToolCallGrammar(
+    //         R"({
+    //     "type": "object",
+    //     "properties": {
+    //         "name": { "enum": ["get_tool_detail"] },
+    //         "arguments": {
+    //             "type": "object",
+    //             "properties": { "name": { "type": "string" } },
+    //             "required": ["name"]
+    //         }
+    //     },
+    //     "required": ["name", "arguments"]
+    // })",
+    //         "<tool_call>");
 
     while (true)
     {
@@ -78,24 +102,26 @@ int main(int argc, char **argv)
             break;
         if (line.empty())
             continue;
-        rsl = engine->applyChatTemplate({
-                                            ChatMessage(ChatRole::User, line),
-                                        },
-                                        true, true);
+        std::string full_prompt = tmpl->render({
+                                                   ChatMessage::from_user(line),
+                                               },
+                                               true, false);
+        std::cout << full_prompt;
+
+        rsl = ctx->feedTokens(full_prompt, true);
         if (!rsl.success)
         {
             std::cout << "FAILED TO APPLY TEMPLATE: " << rsl.text << "\n";
             return 1;
         }
         std::cout << "Model: ";
-        EngineResult res = engine->generateStream(/*max_tokens=*/1600,
-                                                  [](const std::string &piece)
-                                                  {
-                                                      std::cout << piece;
-                                                      std::cout.flush(); // đẩy ra ngay lập tức, không đợi buffer đầy
-                                                      return true;
-                                                  });
-        engine->setTurnGrammar();
+        Result res = ctx->generateStream(
+            [](const std::string &piece)
+            {
+                std::cout << piece;
+                std::cout.flush(); // đẩy ra ngay lập tức, không đợi buffer đầy
+                return true;
+            });
         std::cout << "\n"; // xuống dòng sau khi model in xong (dù thành công hay lỗi)
                            // check xem model có gọi tool không
         if (res.text.find("<tool_call>") != std::string::npos)
@@ -113,18 +139,15 @@ int main(int argc, char **argv)
             // 3. Mở lượt assistant kế tiếp
             fake_turn += "<|im_start|>assistant\n";
 
-            engine->feedTokens(fake_turn);
+            ctx->feedTokens(fake_turn);
 
             // generate tiếp lượt 2
-            EngineResult res2 = engine->generateStream(/*max_tokens=*/600,
-                                                       [](const std::string &piece)
-                                                       {
+            Result res2 = ctx->generateStream([](const std::string &piece)
+                                              {
                                                            std::cout << piece;
                                                            std::cout.flush();
-                                                           return true;
-                                                       });
+                                                           return true; });
             std::cout << "fake tool call  \n";
-            engine->setTurnGrammar();
         }
 
         if (!res.success)
@@ -132,6 +155,7 @@ int main(int argc, char **argv)
             std::cerr << "[Loi] " << res.text << "\n";
         }
     }
+    ctx->release();
 
     return 0;
 }

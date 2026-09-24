@@ -1,9 +1,6 @@
-#include <vector>
-#include <memory>
 #include <llama.h>
 
-
-#include "context/sampler-policy.h"
+#include "sampler-policy.h"
 
 namespace shiro
 {

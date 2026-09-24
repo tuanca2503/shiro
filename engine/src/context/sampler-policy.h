@@ -1,6 +1,8 @@
 #pragma once
+#include <vector>
+#include <memory>
 
-#include "context/policy-type.h"
+#include "policy-type.h"
 
 namespace shiro
 {

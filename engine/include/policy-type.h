@@ -1,6 +1,7 @@
 #pragma once
-
-enum class PolicyType : uint8_t
+namespace shiro
+{
+    enum class PolicyType : uint8_t
     {
         // Chạy xong → clear phần user/assistant → giữ lại system prompt → trả pool
         // về group. Không gắn với một caller cụ thể.
@@ -11,3 +12,4 @@ enum class PolicyType : uint8_t
         // nằm ở tầng server.
         Persistent,
     };
+}
